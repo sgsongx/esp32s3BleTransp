@@ -27,6 +27,8 @@
 _Static_assert(BLE_TRANSP_UART_NUM >= 0 && BLE_TRANSP_UART_NUM < UART_NUM_MAX,
                "Invalid UART peripheral");
 _Static_assert(BLE_TRANSP_UART_BAUD_RATE > 0, "Invalid UART baud rate");
+_Static_assert(BLE_TRANSP_MTU >= ESP_GATT_DEF_BLE_MTU_SIZE && BLE_TRANSP_MTU <= ESP_GATT_MAX_MTU_SIZE,
+               "BLE MTU must be between 23 and 517");
 #if CONFIG_ESP_CONSOLE_UART
 _Static_assert(BLE_TRANSP_UART_NUM != CONFIG_ESP_CONSOLE_UART_NUM,
                "Use a different UART from the log console, or move the console to USB");
@@ -444,7 +446,7 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_bluedroid_enable());
     ESP_ERROR_CHECK(esp_ble_gatts_register_callback(gatts_event_handler));
     ESP_ERROR_CHECK(esp_ble_gap_register_callback(gap_event_handler));
-    ESP_ERROR_CHECK(esp_ble_gatt_set_local_mtu(517));
+    ESP_ERROR_CHECK(esp_ble_gatt_set_local_mtu(BLE_TRANSP_MTU));
     ESP_ERROR_CHECK(esp_ble_gap_set_preferred_default_phy(BLE_TRANSP_PHY, BLE_TRANSP_PHY));
     ESP_ERROR_CHECK(xTaskCreate(uart_tx_task, "uart_tx", 3072, NULL, 10, NULL) == pdPASS ?
                     ESP_OK : ESP_ERR_NO_MEM);

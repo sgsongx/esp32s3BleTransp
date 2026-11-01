@@ -16,7 +16,7 @@
 | UART | UART0，115200，8N1，无流控 |
 | UART 引脚 | TX=U0TXD（GPIO43），RX=U0RXD（GPIO44） |
 | 日志控制台 | 原生 USB Serial/JTAG，D−=GPIO19，D+=GPIO20 |
-| 本地最大 ATT MTU | 517；未协商时为 23 |
+| 本地最大 ATT MTU | `BLE_TRANSP_MTU`，默认 517；未协商时为 23 |
 
 上电完成 GATT 服务创建后开始广播，连接后停止广播，断线自动恢复广播。每次连接都需要重新订阅通知，MTU 也会重置。已移除原例程的第二个演示服务、固定测试通知和测试读数据。
 
@@ -34,10 +34,13 @@
 | `BLE_TRANSP_UART_DATA_BITS` / `BLE_TRANSP_UART_PARITY` / `BLE_TRANSP_UART_STOP_BITS` | 数据位、校验和停止位 |
 | `BLE_TRANSP_UART_FLOW_CTRL` | 默认 `UART_HW_FLOWCTRL_DISABLE`；可选择 `UART_HW_FLOWCTRL_CTS_RTS` |
 | `BLE_TRANSP_UART_RTS_PIN` / `BLE_TRANSP_UART_CTS_PIN` | 使用硬件流控时必须配置实际 GPIO |
+| `BLE_TRANSP_MTU` | 本地最大 ATT MTU，默认 517，可设置 23～517，如 247 |
 | `BLE_TRANSP_PHY` | `ESP_BLE_GAP_PHY_1M_PREF_MASK` / `ESP_BLE_GAP_PHY_2M_PREF_MASK` / `ESP_BLE_GAP_PHY_CODED_PREF_MASK` |
 | `BLE_TRANSP_CODED_PHY_OPTIONS` | Coded 编码偏好：`ESP_BLE_GAP_PHY_OPTIONS_NO_PREF` / `ESP_BLE_GAP_PHY_OPTIONS_PREF_S2_CODING` / `ESP_BLE_GAP_PHY_OPTIONS_PREF_S8_CODING` |
 
 ESP32-S3 TX → 对端 RX，ESP32-S3 RX ← 对端 TX，并连接 GND。使用 3.3 V TTL 串口；RS-232 / RS-485 需要匹配的收发器。选 GPIO 时检查具体开发板是否已经占用这些引脚。使用 RTS/CTS 时交叉连接 RTS → CTS、CTS ← RTS。
+
+`BLE_TRANSP_MTU` 在连接前设置本地支持的 MTU 上限。GATT Server 不会主动发起 MTU 交换，需要手机等 GATT Client 请求协商；实际 MTU 取双方支持值的较小值，协商前保持 23，不能直接把配置值当作已经协商的 MTU。
 
 日志与标准输入输出使用 ESP32-S3 原生 USB Serial/JTAG 控制台，二级 Bootloader 日志也使用此接口；UART0 用于 BLE 透传。串口引脚宏来自 SDK 的 `soc/uart_pins.h`。编译时仍会阻止把日志控制台和透传配置到同一个 UART。
 

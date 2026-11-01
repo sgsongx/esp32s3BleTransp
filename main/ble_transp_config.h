@@ -37,6 +37,11 @@
 #define BLE_TRANSP_UART_CTS_PIN UART_PIN_NO_CHANGE
 #endif
 
+/* Local MTU limit (23..517); the peer initiates MTU exchange. */
+#ifndef BLE_TRANSP_MTU
+#define BLE_TRANSP_MTU 517
+#endif
+
 /* Choose ESP_BLE_GAP_PHY_1M_PREF_MASK, _2M_PREF_MASK or _CODED_PREF_MASK. */
 #ifndef BLE_TRANSP_PHY
 #define BLE_TRANSP_PHY ESP_BLE_GAP_PHY_1M_PREF_MASK
