@@ -13,8 +13,9 @@
 | UART → BLE | 订阅数据特征的 Notify，CCCD `0x2902` 写入 `01 00` |
 | 默认连接间隔 | 广播声明偏好 30 ms；连接后申请一次 30 ms，latency=0，监督超时 4 s |
 | BLE PHY | 默认 LE 1M，可通过宏选择 LE 2M / LE Coded |
-| UART | UART1，115200，8N1，无流控 |
-| UART 引脚 | TX=GPIO17，RX=GPIO18 |
+| UART | UART0，115200，8N1，无流控 |
+| UART 引脚 | TX=U0TXD（GPIO43），RX=U0RXD（GPIO44） |
+| 日志控制台 | 原生 USB Serial/JTAG，D−=GPIO19，D+=GPIO20 |
 | 本地最大 ATT MTU | 517；未协商时为 23 |
 
 上电完成 GATT 服务创建后开始广播，连接后停止广播，断线自动恢复广播。每次连接都需要重新订阅通知，MTU 也会重置。已移除原例程的第二个演示服务、固定测试通知和测试读数据。
@@ -27,7 +28,7 @@
 
 | 宏 | 用途 |
 | --- | --- |
-| `BLE_TRANSP_UART_NUM` | 串口外设，如 `UART_NUM_1` / `UART_NUM_2` |
+| `BLE_TRANSP_UART_NUM` | 串口外设，默认 `UART_NUM_0` |
 | `BLE_TRANSP_UART_BAUD_RATE` | UART 波特率 |
 | `BLE_TRANSP_UART_TX_PIN` / `BLE_TRANSP_UART_RX_PIN` | TX / RX GPIO |
 | `BLE_TRANSP_UART_DATA_BITS` / `BLE_TRANSP_UART_PARITY` / `BLE_TRANSP_UART_STOP_BITS` | 数据位、校验和停止位 |
@@ -38,7 +39,9 @@
 
 ESP32-S3 TX → 对端 RX，ESP32-S3 RX ← 对端 TX，并连接 GND。使用 3.3 V TTL 串口；RS-232 / RS-485 需要匹配的收发器。选 GPIO 时检查具体开发板是否已经占用这些引脚。使用 RTS/CTS 时交叉连接 RTS → CTS、CTS ← RTS。
 
-默认 UART0 保留为日志控制台，透传 UART 不输出日志。编译时会阻止透传 UART 与日志 UART 相同；若要用 UART0，请先把控制台改到 USB 或关闭 UART 控制台。
+日志与标准输入输出使用 ESP32-S3 原生 USB Serial/JTAG 控制台，二级 Bootloader 日志也使用此接口；UART0 用于 BLE 透传。串口引脚宏来自 SDK 的 `soc/uart_pins.h`。编译时仍会阻止把日志控制台和透传配置到同一个 UART。
+
+日志请连接开发板直连 GPIO19/GPIO20 的原生 USB 接口（常标为 USB / USB-JTAG）。板载 CH340、CP210x 等 USB-UART 桥若连接 UART0，其串口现在用于透传数据。复位最初的 ROM 启动信息仍可能出现在 UART0；本配置不修改 eFuse，UART 对端应忽略进入应用前的启动字节。原生 USB 接线与控制台说明见 [ESP-IDF 官方文档](https://docs.espressif.com/projects/esp-idf/en/release-v5.3/esp32s3/api-guides/usb-serial-jtag-console.html)。
 
 ## 编译、烧录
 
@@ -50,7 +53,9 @@ idf.py build
 idf.py -p COMx flash monitor
 ```
 
-`COMx` 替换为开发板烧录/日志端口，UART1 透传数据通过另一个串口适配器收发。退出 monitor 使用 `Ctrl+]`。
+`COMx` 替换为原生 USB Serial/JTAG 枚举出的端口，用于烧录和查看日志；UART0 透传数据通过连接 GPIO43/GPIO44 的串口适配器或板载 USB-UART 桥收发。若通过 UART0 烧录，烧录完成后请在原生 USB 端口运行 `idf.py -p COM_USB monitor` 查看日志。退出 monitor 使用 `Ctrl+]`。
+
+本次控制台修改需要使用 `flash` 烧录二级 Bootloader 和应用；仅使用 `app-flash` 会保留旧 Bootloader 的日志配置。
 
 工程已在当前 `sdkconfig` 和默认配置中启用 BLE 5 和扩展广播支持。虽然使用扩展广播 API，实际发出的是传统可连接 ADV_IND 广播，手机正常扫描即可发现。若沿用旧的自定义 `sdkconfig`，请在 menuconfig 中设置：
 
@@ -60,6 +65,8 @@ CONFIG_BT_BLUEDROID_ENABLED=y
 CONFIG_BT_BLE_50_FEATURES_SUPPORTED=y
 # CONFIG_BT_BLE_42_FEATURES_SUPPORTED is not set
 CONFIG_BT_BLE_50_EXTEND_ADV_EN=y
+CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG=y
+CONFIG_ESP_CONSOLE_SECONDARY_NONE=y
 ```
 
 ## 数据与缓冲约定

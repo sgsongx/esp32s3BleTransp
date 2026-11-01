@@ -37,6 +37,7 @@ with tempfile.TemporaryDirectory(prefix="bletransp-test-") as directory:
         compiler, "-std=c11", "-Wall", "-Wextra", "-Werror",
         "-Wno-unused-parameter", "-Wno-unused-function",
         "-I", str(temporary), "-I", str(ble_headers),
+        "-I", str(Path(idf) / "components/soc/esp32s3/include"),
         str(root / "tests/test_bridge.c"), "-o", str(executable),
     ], check=True)
     subprocess.run([str(executable)], check=True)

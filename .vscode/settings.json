@@ -25,5 +25,7 @@
   "idf.currentSetup": "D:\\Studying\\embedded_systems\\developboard\\MCU\\ESP\\v6.0\\esp-idf",
   "idf.customExtraVars": {
     "IDF_TARGET": "esp32s3"
-  }
+  },
+  "idf.port": "COM11",
+  "idf.flashType": "UART"
 }
